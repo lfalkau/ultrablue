@@ -4,7 +4,7 @@
 
 The following diagram represents the Ultrablue Protocol. It reads from top to bottom. Each arrow represents a message between the server (as the attester) and the client (as the verifier):
 
-![file:///home/lfb/Downloads/client-helper-protocol.svg]()
+![](https://github.com/lfalkau/ultrablue/blob/client-doc/doc/implementing-clients/protocol.svg)
 
 - Grey arrow are messages displayed on a QR code. it must be scanned to get its content.
 - Blue arrows are messages sent over Bluetooth Low Energy (BLE), through the Ultrablue characteristic.
@@ -18,6 +18,7 @@ Messages in the green box are only sent when performing an enrollment.
 
 ## Technical considerations:
 
+// TODO
 
 
 # Data types
