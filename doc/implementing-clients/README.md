@@ -1,3 +1,4 @@
+
 # Protocol
 
 ## Messages overview:
@@ -18,7 +19,36 @@ Messages in the green box are only sent when performing an enrollment.
 
 ## Technical considerations:
 
-// TODO
+Here are some notes on important things to know when implementing a client, in no particular order:
+
+- **The client UUID**: It must be generated randomly at enroll time before being sent to the server. During later attestations, the same UUID needs to be sent by the client, to allow the server to fetch the shared key. If the server receives an UUID it already "knows" during an enrollment, it will fail and disconnect the client. Appropriate error handling must be done on client side (e.g. reconnect and generate a new UUID, tell the user why it failed and ask them to restart the enrollment...).
+
+- **Encryption**: As described in the encoding section, most of messages are encrypted. When they are, the IV prefixes the encrypted message. IV must never be reused with the same key. It must be randomly generated.
+
+- **Derived auth nonce**: To avoid usage of heavy TPM calls, an authentication process takes place at the beginning of the protocol. The server generates a random nonce, which is 16 bytes long and sends it to the client. The client (assuming it owns the shared key) decrypts the nonce, tweaks it in a way I'll describe below, re-encrypts the result and sends it to the server. The nonce tweak is needed before being sent back because else, nothing would avoid a client to send back the exact same message it got. It would be the same nonce, encrypted with the right key and a valid IV.  The chosen tweak is to split the nonce in two halfs, 8 bytes each, and to invert those. In python, this would give: `tweaked = nonce[8:] + nonce[:8]`.
+This authentication round-trip takes around 180ms to be performed. TPM key generation, that could be used without freely without it, takes 3 seconds in average, but can sometimes take more than 10 seconds (Those benchmarks were done on my personal computer and you may observe different values).
+
+- **Credential activation**: It should be obvious, but when sending the MakeCredential challenge to the attester's TPM, the nonce must be randomly generated, and when the challenge response comes back, the client must ensure it matches the generated one. This step proves to the verifier (you) that the Attestation Key you got has been generated on the same physical TPM than the one you enrolled. Relying on external TPM libraries can be helpful to avoid doing things wrong.
+
+// TODO: Merge the credential activation and the anti replay nonce
+
+- **Attestation process**: You will get several things from the server at this stage: 
+	- A quote, containing the set of PCRs final hashes, signed with the Attestation Key previously received, and the decrypted nonce you sent during the credential activation. Both the signature and the nonce must be verified to assert the quote is genuine and to avoid replay attacks.
+	- The event log, which is a file containing information on each PCR extension that happened during the boot process. This event log is not protected in any way and can have been tampered with. To be trusted, you'll first need to replay it, and assert that obtained each PCR final hash match the corresponding one in the quote (which is signed). Once done, you can use the event log with more confidence.
+
+	Note that this is the stage where you can apply a PCR policy (choose which PCR are checked), and when to return an error, or not. This policy can be user defined or hardcoded, but if it is user defined, the client should warn the user and explain them what they are toggling. In the same way, the client should provide a report of what can have gone wrong if the policy is not satisfied after the attestation.
+
+- **Attestation response**: Ultrablue can be used to do disk encryption. At enroll time, a flag is sent by the server to indicate weither you must send back a secret or not on attestation success. If you have to, this secret must be securely generated and securely stored. You'll need to send this secret back on later attestations for this attester.
+
+- **Storing server devices**: To perform remote attestation and act as a verifier, data about the attester must be stored, including:
+	- The attester' TPM endorsement key
+	- Connection information about the attester (MAC address, advertised name...)
+	- The UUID you generated at enroll time
+	- The secret you generated at enroll time if you did
+	- The shared symmetric key used to encrypt the communication
+
+	Secrets should be securely stored, e.g. in the keystore on Android, in the keychain on IOS...
+	// TODO: Find the best moment to store the attester object
 
 
 # Data types
@@ -193,4 +223,3 @@ Packet n.3:
 |     encoded[36:42]    |
 +-+-+-+-+-+-+-+-+-+-+-+-+
 ```
-
