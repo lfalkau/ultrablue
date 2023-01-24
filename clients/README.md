@@ -14,7 +14,7 @@ The following diagram represents the message sequence exchanged between the serv
 Note that this diagram comes with datatypes annoted next to the message, in bold text. These types are described further in the **Data types** section.
 Also note that some very important technical details are ommited from this diagram because they're not directly communication related. These details are addressed in the **Technical considerations** section.
 
-![ultrablue message protocol](../doc/ressources/ultrablue_messages_protocol.svg)
+![ultrablue message protocol](../doc/ressources/ultrablue_message_protocol.svg)
 
 > **Grey arrow**: Message displayed over a QR code
 > **Blue arrow**: Message sent over Bluetooth Low Energy (BLE)
