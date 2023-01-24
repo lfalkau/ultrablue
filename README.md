@@ -33,7 +33,7 @@ featuring a TPM and a Bluetooth interface (typically a laptop), as well as mobil
 To enroll a phone as a verifier, start the server in enroll mode:
 
 ```
-sudo ultrablue-server -enroll -pcr-extend
+sudo ultrablue-server --enroll
 ```
 
 This will display a QR code on the terminal. From the phone, run the client
@@ -50,7 +50,7 @@ PCR-extension is configured at enroll time (the flag has no effect in
 attestation mode):
 
 ```
-sudo ultrablue-server -enroll -pcr-extend
+sudo ultrablue-server --enroll --pcr-extend
 ```
 
 ### 2. Boot-time integration using Dracut (optional)
@@ -85,6 +85,7 @@ persistent configuration.
 If you did the initramfs configuration step, Ultrablue server will run
 automatically during the boot. Otherwise, manually start the server in
 attestation mode:
+
 ```bash
 sudo ultrablue-server
 ```
