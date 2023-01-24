@@ -8,7 +8,7 @@ It is divided into several steps, listed here. For each, there is a sequence dia
 
 ## Enrollment - Pairing
 
-![[pairing.svg]]
+![](../ressources/pairing.svg)
 
 When running the server in enroll mode, this one will generate a long-term symmetric key from the TPM random source. This key will be used to encrypt all subsequent communications with the enrolling client.
 
@@ -20,7 +20,7 @@ Once the client scanned the QR code and possess connection & encryption material
 
 While this step isn't technically needed (the encryption is already authenticated), it avoids an attacker to trigger heavy TPM calls from next steps. TPMs are not all equals, and results may vary on other machines, but on mine, it can take up to 10s to create an attestation key, while the authencication step takes at most 200ms.
 
-![[authentication.svg]]
+![](../ressources/authentication.svg)
 
 It starts with the client sending its UUID to the server. It allows the server to persist the newly generated key for an enrollment, or to retrieve it during an attestaion.
 
@@ -42,7 +42,7 @@ Once the client sent back the tweaked nonce, the server can match it with the no
 For subsequent attsetations, the client must know the public part of the attester's TPM Endorsement Key.
 This step aims at communicate it to the client.
 
-![[ek-exchange.svg]]
+![](../ressources/ek-exchange.svg)
 
 The server first generates its Endorsement Key with the TPM. The Endorsement Key is deterministically generated from a seed and a template. The seed is burnt into the TPM and never changes. The template is application provided, and Ultrablue always provide the same, this results in the same EK each time, and only avoids keeping the EK in the TPM persistent memory.
 If present, a certificate for the Endorsement key is also fetched. Certificates for the most freqent templates are stored into the TPM non volative memory.
@@ -57,7 +57,7 @@ This secret will be used by the server to extend the 9th PCR, which can then be 
 For privacy reasons, the Endorsement Key can't sign anything. Remote attestation protocols however requires a singing key coming from the TPM. This is the goal of the Attestation Key.
 The credential activation step aims at providing this key to the client, and proving it this key is genuine.
 
-![[credential-activation.svg]]
+![](../ressources/credential-activation.svg)
 
 First, the server generates an attestation key on the TPM. This key is derived from the Storage Root Key, and is per-attestation unique. It then sends what we call the AK name to the client, which is the public part of the key, and the template used to create it.
 
@@ -71,7 +71,7 @@ If the server is able to send back the decrypted secret, and if it matches the o
 
 This is the step where we actually check the boot state measurements against reference ones.
 
-![[attestation.svg]]
+![](../ressources/attestation.svg)
 
 It begins with the client generating an anti replay nonce. This nonce aims to avoid replay-attacks. This nonce is sent to the server.
 
@@ -91,7 +91,7 @@ Finally, the client must return a response. This response can indicate an error,
 
 Put all together, this is what our protocol looks like. Feel free to contact us if you see anything to say about it, any suggestion/improvement...
 
-![[ultrablue_detailed_protocol.svg]]
+![](../ressources/ultrablue_detailed_protocol.svg)
 
 ---
 
@@ -104,6 +104,6 @@ The following are ideas on how we could improve the protocol, some have already 
 The idea is that between the credential activation and the attestation process, two nonces are generated on client side, used on server side and verified again on client side.
 We could merge those nonces in this way:
 
-![[merged-nonces.svg]]
+![](../ressources/merged-nonces.svg)
 
 The only remaining nonce is the MakeCredential one, that is also used as the anti-replay nonce given to the TPM to generate the quote.
