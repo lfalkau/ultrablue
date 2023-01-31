@@ -152,46 +152,35 @@ func authentication(session *Session) error {
 	return nil
 }
 
-func credentialActivation(session *Session, tpm *attest.TPM) (*attest.AK, error) {
+func credentialActivation(session *Session, tpm *attest.TPM) (*attest.AK, []byte, error) {
 	logrus.Info("Generating AK")
 	ak, err := tpm.NewAK(nil)
 	if err != nil {
 		close(session.ch)
-		return nil, err
+		return nil, nil, err
 	}
 	err = sendMsg(ak.AttestationParameters(), session)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	logrus.Info("Getting credential blob")
 	var ec attest.EncryptedCredential
 	err = recvMsg(&ec, session)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	logrus.Info("Decrypting credential blob")
-	decrypted, err := ak.ActivateCredential(tpm, ec)
+	nonce, err := ak.ActivateCredential(tpm, ec)
 	if err != nil {
 		close(session.ch)
-		return nil, err
+		return nil, nil, err
 	}
-	logrus.Info("Sending back decrypted credential blob")
-	err = sendMsg(Bytestring{decrypted}, session)
-	if err != nil {
-		return nil, err
-	}
-	return ak, nil
+	return ak, nonce, nil
 }
 
-func attestation(session *Session, tpm *attest.TPM, ak *attest.AK) error {
-	logrus.Info("Getting anti replay nonce")
-	var nonce Bytestring
-	err := recvMsg(&nonce, session)
-	if err != nil {
-		return err
-	}
+func attestation(session *Session, tpm *attest.TPM, ak *attest.AK, nonce []byte) error {
 	logrus.Info("Retrieving attestation plateform data")
-	ap, err := tpm.AttestPlatform(ak, nonce.Bytes, nil)
+	ap, err := tpm.AttestPlatform(ak, nonce, nil)
 	if err != nil {
 		close(session.ch)
 		return err
@@ -271,12 +260,12 @@ func ultrablueProtocol(ch chan []byte) {
 			return
 		}
 	}
-	ak, err := credentialActivation(session, tpm)
+	ak, nonce, err := credentialActivation(session, tpm)
 	if err != nil {
 		logrus.Error(err)
 		return
 	}
-	err = attestation(session, tpm, ak)
+	err = attestation(session, tpm, ak, nonce)
 	if err != nil {
 		logrus.Error(err)
 		return
